@@ -1,42 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Trophy, Flag } from 'lucide-react';
 import { truncateAddress, formatCurrency } from '@/lib/formatters';
 import Link from 'next/link';
 
-interface LeaderboardWallet {
-  address: string;
-  score: number;
-  total_volume: number;
-  trade_count: number;
-  win_rate: number;
-  is_flagged: number;
-}
-
 export function Leaderboard() {
-  const [wallets, setWallets] = useState<LeaderboardWallet[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        const res = await fetch('/api/leaderboard?limit=10');
-        if (res.ok) {
-          const data = await res.json();
-          setWallets(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch leaderboard:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeaderboard();
-  }, []);
+  const wallets = useQuery(api.queries.getLeaderboard, { limit: 10 });
+  
+  const loading = wallets === undefined;
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#ef4444';
@@ -58,7 +33,7 @@ export function Leaderboard() {
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#6366f1]"></div>
           </div>
-        ) : wallets.length === 0 ? (
+        ) : !wallets || wallets.length === 0 ? (
           <div className="text-center py-8 text-[#71717a]">
             <Trophy className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p>No wallets tracked yet</p>
@@ -73,7 +48,7 @@ export function Leaderboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {wallets.map((wallet, index) => (
+              {wallets.map((wallet) => (
                 <TableRow key={wallet.address} className="border-[#27272a] hover:bg-[#1a1a2e]">
                   <TableCell>
                     <div className="flex items-center gap-2">

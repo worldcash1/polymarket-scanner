@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from 'convex/react';
+import { api } from '../../../../convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, 
   Clock, 
   Target, 
-  TrendingUp,
   Wallet as WalletIcon,
   AlertTriangle,
   Link as LinkIcon,
@@ -28,49 +28,6 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-interface WalletData {
-  wallet: {
-    address: string;
-    first_seen: number | null;
-    last_seen: number | null;
-    trade_count: number;
-    total_volume: number;
-    win_count: number;
-    loss_count: number;
-    win_rate: number;
-    pnl: number;
-    score: number;
-    is_flagged: number;
-    funding_sources: string | null;
-    is_cex_funded: number;
-    cluster_id: string | null;
-  };
-  trades: Array<{
-    id: number;
-    tx_hash: string;
-    wallet: string;
-    side: string;
-    asset: string;
-    condition_id: string | null;
-    size: number;
-    price: number;
-    timestamp: number;
-    title: string | null;
-    slug: string | null;
-    outcome: string | null;
-  }>;
-  scoreBreakdown: {
-    accountAge: { score: number; max: number };
-    betConcentration: { score: number; max: number };
-    sizeAnomaly: { score: number; max: number };
-    winRate: { score: number; max: number };
-    timing: { score: number; max: number };
-    funding: { score: number; max: number };
-  };
-  volumeHistory: Array<{ date: string; volume: number }>;
-  flags: string[];
-}
-
 const scoreLabels: Record<string, string> = {
   accountAge: 'Account Age',
   betConcentration: 'Bet Concentration',
@@ -83,34 +40,9 @@ const scoreLabels: Record<string, string> = {
 export default function WalletProfile({ params }: { params: Promise<{ address: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const [data, setData] = useState<WalletData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchWallet = async () => {
-      try {
-        const res = await fetch(`/api/wallet/${resolvedParams.address}`);
-        if (!res.ok) {
-          if (res.status === 404) {
-            setError('Wallet not found');
-          } else {
-            setError('Failed to load wallet data');
-          }
-          return;
-        }
-        const walletData = await res.json();
-        setData(walletData);
-      } catch (err) {
-        console.error('Failed to fetch wallet:', err);
-        setError('Failed to load wallet data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWallet();
-  }, [resolvedParams.address]);
+  
+  const data = useQuery(api.queries.getWallet, { address: resolvedParams.address });
+  const loading = data === undefined;
 
   if (loading) {
     return (
@@ -120,11 +52,11 @@ export default function WalletProfile({ params }: { params: Promise<{ address: s
     );
   }
 
-  if (error || !data) {
+  if (!data) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center gap-4">
         <AlertTriangle className="w-12 h-12 text-[#ef4444]" />
-        <p className="text-[#e4e4e7] text-lg">{error || 'Wallet not found'}</p>
+        <p className="text-[#e4e4e7] text-lg">Wallet not found</p>
         <Button 
           variant="outline" 
           className="border-[#27272a] text-[#e4e4e7] hover:bg-[#1a1a2e]"

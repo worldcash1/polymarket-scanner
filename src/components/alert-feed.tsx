@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -14,44 +16,15 @@ import { AlertTriangle, Circle, ExternalLink } from 'lucide-react';
 import { truncateAddress, formatRelativeTime, getSeverityColor } from '@/lib/formatters';
 import Link from 'next/link';
 
-interface Alert {
-  id: number;
-  type: string;
-  wallet: string | null;
-  cluster_id: string | null;
-  market: string | null;
-  details: string | null;
-  severity: string;
-  created_at: number;
-  score: number | null;
-}
-
 export function AlertFeed() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [severity, setSeverity] = useState('all');
-  const [loading, setLoading] = useState(true);
+  
+  const alerts = useQuery(api.queries.getAlerts, {
+    severity: severity === 'all' ? undefined : severity,
+    limit: 50,
+  });
 
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (severity !== 'all') params.set('severity', severity);
-        params.set('limit', '50');
-        
-        const res = await fetch(`/api/alerts?${params}`);
-        if (res.ok) {
-          const data = await res.json();
-          setAlerts(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch alerts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAlerts();
-  }, [severity]);
+  const loading = alerts === undefined;
 
   const formatAlertType = (type: string) => {
     return type
@@ -86,7 +59,7 @@ export function AlertFeed() {
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#6366f1]"></div>
           </div>
-        ) : alerts.length === 0 ? (
+        ) : !alerts || alerts.length === 0 ? (
           <div className="text-center py-8 text-[#71717a]">
             <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p>No alerts found</p>

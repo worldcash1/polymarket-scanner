@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Header } from '@/components/header';
 import { StatCard } from '@/components/stat-card';
 import { AlertFeed } from '@/components/alert-feed';
@@ -8,41 +9,10 @@ import { Leaderboard } from '@/components/leaderboard';
 import { HotMarkets } from '@/components/hot-markets';
 import { Bell, Network, Wallet, AlertTriangle } from 'lucide-react';
 
-interface Stats {
-  trades: number;
-  wallets: number;
-  clusters: number;
-  alerts: {
-    total: number;
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-    highestSeverity: string;
-  };
-}
-
 export default function CommandCenter() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const stats = useQuery(api.queries.getStats);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch('/api/stats');
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  const loading = stats === undefined;
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
