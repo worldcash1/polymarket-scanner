@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AlertTriangle, Circle, ExternalLink } from 'lucide-react';
-import { truncateAddress, formatRelativeTime, getSeverityColor } from '@/lib/formatters';
+import { truncateAddress, formatRelativeTime, getSeverityColor, formatAlertSummary } from '@/lib/formatters';
 import Link from 'next/link';
 
 export function AlertFeed() {
@@ -89,11 +89,9 @@ export function AlertFeed() {
                         {formatRelativeTime(alert.created_at)}
                       </span>
                     </div>
-                    {alert.details && (
-                      <p className="text-sm text-[#e4e4e7] mb-2 line-clamp-2">
-                        {alert.details}
-                      </p>
-                    )}
+                    <p className="text-sm text-[#e4e4e7] mb-2 line-clamp-2">
+                      {formatAlertSummary(alert.type, alert.details ?? null)}
+                    </p>
                     <div className="flex items-center gap-3">
                       {alert.wallet && (
                         <Link 
