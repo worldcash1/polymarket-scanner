@@ -4,8 +4,18 @@ import { v } from "convex/values";
 export const getStats = query({
   args: {},
   handler: async (ctx) => {
-    const [trades, wallets, clusters, alerts] = await Promise.all([
-      ctx.db.query("trades").collect(),
+    // Use paginated counts instead of collecting all docs
+    let tradeCount = 0;
+    let cursor: string | null = null;
+    let done = false;
+    while (!done) {
+      const page = await ctx.db.query("trades").paginate({ cursor: cursor ?? undefined, numItems: 1000 } as any);
+      tradeCount += page.page.length;
+      if (page.isDone) done = true;
+      else cursor = page.continueCursor;
+    }
+
+    const [wallets, clusters, alerts] = await Promise.all([
       ctx.db.query("wallets").collect(),
       ctx.db.query("clusters").collect(),
       ctx.db.query("alerts").filter((q) => q.eq(q.field("dismissed"), false)).collect(),
@@ -30,7 +40,7 @@ export const getStats = query({
               : "none";
 
     return {
-      trades: trades.length,
+      trades: tradeCount,
       wallets: wallets.length,
       clusters: clusters.length,
       alerts: {
@@ -116,7 +126,8 @@ export const getHotMarkets = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const trades = await ctx.db.query("trades").collect();
+    // Only look at recent trades (last 1000) to avoid hitting read limits
+    const trades = await ctx.db.query("trades").order("desc").take(1000);
 
     // Aggregate by market (title or conditionId)
     const marketMap = new Map<
@@ -183,7 +194,7 @@ export const getWallet = query({
       .query("trades")
       .withIndex("by_wallet", (q) => q.eq("wallet", args.address))
       .order("desc")
-      .collect();
+      .take(200);
 
     // Parse score breakdown
     let scoreBreakdown = {
