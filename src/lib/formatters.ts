@@ -70,6 +70,13 @@ export function formatAlertSummary(type: string, details: string | null): string
     case 'rapid_trading': {
       return (parsed.message as string) || 'Rapid-fire trading pattern detected';
     }
+    case 'sharp_bettor': {
+      const winRate = ((parsed.value as number) || 0).toFixed(1);
+      const resolved = (parsed.resolvedBets as number) || 0;
+      const activeBets = (parsed.activeBets as unknown[]) || [];
+      const activeCount = activeBets.length;
+      return `Sharp bettor: ${winRate}% win rate over ${resolved} bets — ${activeCount} active position${activeCount !== 1 ? 's' : ''} right now`;
+    }
     default:
       return (parsed.message as string) || type.replace(/_/g, ' ');
   }

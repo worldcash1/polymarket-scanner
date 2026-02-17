@@ -155,6 +155,51 @@ function renderContextGrid(type: string, details: Record<string, unknown> | null
       }
       break;
     }
+
+    case 'sharp_bettor': {
+      const winRate = (details.value as number) || 0;
+      const resolved = (details.resolvedBets as number) || 0;
+      const wins = (details.wins as number) || 0;
+      const losses = (details.losses as number) || 0;
+      pills.push({ 
+        icon: <TrendingUp className="w-3 h-3" />,
+        label: 'Win Rate', 
+        value: `${winRate.toFixed(1)}% (${wins}W/${losses}L)` 
+      });
+      pills.push({ label: 'Resolved', value: `${resolved} bets` });
+      
+      const totalVolume = details.totalVolume as number;
+      if (totalVolume) {
+        pills.push({ label: 'Volume', value: formatCurrency(totalVolume) });
+      }
+      
+      const profitEstimate = details.profitEstimate as number;
+      if (profitEstimate) {
+        pills.push({ 
+          label: 'Profit', 
+          value: `${profitEstimate >= 0 ? '+' : ''}${formatCurrency(profitEstimate)}` 
+        });
+      }
+      
+      // Active bets - THE ALPHA
+      const activeBets = (details.activeBets as Array<{ market: string; outcome: string; price: number; size: number }>) || [];
+      if (activeBets.length > 0) {
+        // Show first 3 active bets as separate pills
+        for (const bet of activeBets.slice(0, 3)) {
+          const marketShort = bet.market.length > 15 ? bet.market.slice(0, 12) + '...' : bet.market;
+          const pct = (bet.price * 100).toFixed(0);
+          pills.push({
+            icon: <BarChart3 className="w-3 h-3" />,
+            label: bet.outcome,
+            value: `${marketShort} @ ${pct}%`
+          });
+        }
+        if (activeBets.length > 3) {
+          pills.push({ label: 'More', value: `+${activeBets.length - 3} positions` });
+        }
+      }
+      break;
+    }
   }
 
   if (pills.length === 0) return null;
