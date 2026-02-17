@@ -184,9 +184,8 @@ function renderContextGrid(type: string, details: Record<string, unknown> | null
       // Active bets - THE ALPHA
       const activeBets = (details.activeBets as Array<{ market: string; outcome: string; price: number; size: number }>) || [];
       if (activeBets.length > 0) {
-        // Show first 3 active bets as separate pills
         for (const bet of activeBets.slice(0, 3)) {
-          const marketShort = bet.market.length > 15 ? bet.market.slice(0, 12) + '...' : bet.market;
+          const marketShort = bet.market.length > 25 ? bet.market.slice(0, 22) + '...' : bet.market;
           const pct = (bet.price * 100).toFixed(0);
           pills.push({
             icon: <BarChart3 className="w-3 h-3" />,
@@ -196,6 +195,24 @@ function renderContextGrid(type: string, details: Record<string, unknown> | null
         }
         if (activeBets.length > 3) {
           pills.push({ label: 'More', value: `+${activeBets.length - 3} positions` });
+        }
+      }
+      
+      // Stock crossover signals - THE META PLAY
+      const stockCrossovers = (details.stockCrossovers as Array<{ market: string; direction: string; tickers: string[]; thesis: string }>) || [];
+      if (stockCrossovers.length > 0) {
+        const uniqueTickers = [...new Set(stockCrossovers.flatMap(s => s.tickers))].slice(0, 5);
+        pills.push({
+          icon: <TrendingUp className="w-3 h-3 text-[#22c55e]" />,
+          label: '📈 Stock Play',
+          value: uniqueTickers.join(', ')
+        });
+        // Show thesis for first crossover
+        if (stockCrossovers[0].thesis) {
+          pills.push({
+            label: 'Thesis',
+            value: stockCrossovers[0].thesis
+          });
         }
       }
       break;
